@@ -1,33 +1,46 @@
 pub mod tiles;
 
 use self::tiles::*;
-use std::fmt::Write;
+use std::fmt::Display;
 
-struct RenderedSolution(String);
+struct Solution {
+    combos: Vec<Tiles>,
+    leftover_jokers: u8,
+}
+
+impl Solution {
+    fn new<'a>(mut list: Option<&'a SolutionList<'a>>, leftover_jokers: u8) -> Solution {
+        let mut combos = vec![];
+        while let Some(sol) = list {
+            list = sol.rest;
+            combos.push(sol.current);
+        }
+        Solution { combos, leftover_jokers }
+    }
+}
+
+impl Display for Solution {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        for tiles in self.combos.iter() {
+            write!(fmt, "({}), ", tiles)?;
+        }
+        write!(fmt, "leftover jokers: {}", self.leftover_jokers)
+    }
+}
 
 #[derive(Debug)]
-struct Solution<'a> {
-    rest: Option<&'a Solution<'a>>,
+struct SolutionList<'a> {
+    rest: Option<&'a SolutionList<'a>>,
     current: Tiles,
 }
 
-fn solve(tiles: Tiles) -> Vec<RenderedSolution> {
+fn solve(tiles: Tiles) -> Vec<Solution> {
     let mut res = vec![];
     solve_loop(&mut res, tiles, Tile::min_value(), None);
     res
 }
 
-fn render_solution<'a>(mut solution: Option<&'a Solution<'a>>, leftover_jokers: u8) -> RenderedSolution {
-    let mut s = String::new();
-    while let Some(sol) = solution {
-        solution = sol.rest;
-        write!(s, "({}), ", sol.current).unwrap();
-    }
-    write!(s, "leftover jokers: {}", leftover_jokers).unwrap();
-    RenderedSolution(s)
-}
-
-fn solve_loop<'a>(results: &mut Vec<RenderedSolution>, tiles: Tiles, mut next: Tile, rest: Option<&'a Solution<'a>>) {
+fn solve_loop<'a>(results: &mut Vec<Solution>, tiles: Tiles, mut next: Tile, rest: Option<&'a SolutionList<'a>>) {
     loop {
         let next_count = tiles.get_count(&next);
         if next_count == 0 {
@@ -37,7 +50,7 @@ fn solve_loop<'a>(results: &mut Vec<RenderedSolution>, tiles: Tiles, mut next: T
                     continue;
                 }
                 None => {
-                    results.push(render_solution(rest, 0));
+                    results.push(Solution::new(rest, 0));
                     break;
                 }
             }
@@ -46,7 +59,7 @@ fn solve_loop<'a>(results: &mut Vec<RenderedSolution>, tiles: Tiles, mut next: T
         let (rank, color) = match next {
             Tile::Joker => {
                 // not quite a solution, but we want to know about it
-                results.push(render_solution(rest, tiles.get_count(&next)));
+                results.push(Solution::new(rest, tiles.get_count(&next)));
                 break;
             },
             Tile::Number(rank, color) => (rank, color),
@@ -82,7 +95,7 @@ fn solve_loop<'a>(results: &mut Vec<RenderedSolution>, tiles: Tiles, mut next: T
             }
             if natural < 2 { return false; }
 
-            let solution = Solution {
+            let solution = SolutionList {
                 current: combo,
                 rest,
             };
@@ -144,7 +157,7 @@ fn main() -> Result<(), TilesError> {
         let tiles = arg.parse::<Tiles>()?;
         println!("Trying to solve board: {}", tiles);
         for solution in solve(tiles) {
-            println!("Solution: {}", solution.0);
+            println!("Solution: {}", solution);
         }
         println!("* * *");
     }

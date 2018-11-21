@@ -149,8 +149,8 @@ impl FromStr for Tile {
 impl Display for Tile {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            Tile::Joker => write!(fmt, "J "),
-            Tile::Number(rank, color) => write!(fmt, "{}{} ", rank, color),
+            Tile::Joker => write!(fmt, "J"),
+            Tile::Number(rank, color) => write!(fmt, "{}{}", rank, color),
         }
     }
 }
@@ -286,8 +286,14 @@ impl FromStr for Tiles {
 
 impl Display for Tiles {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let mut is_first = true;
         for tile in Tile::all() {
             for _ in 0..self.get_count(&tile) {
+                if is_first {
+                    is_first = false;
+                } else {
+                    write!(fmt, " ")?;
+                }
                 tile.fmt(fmt)?;
             }
         }
