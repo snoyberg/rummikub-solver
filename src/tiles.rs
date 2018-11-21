@@ -1,8 +1,8 @@
-use std::str::FromStr;
 use std::fmt::Display;
+use std::str::FromStr;
 
 /// The four colors
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Color {
     Black,
     Blue,
@@ -12,12 +12,16 @@ pub enum Color {
 
 impl Display for Color {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(fmt, "{}", match self {
-            Color::Black => 'B',
-            Color::Blue => 'U',
-            Color::Orange => 'O',
-            Color::Red => 'R',
-        })
+        write!(
+            fmt,
+            "{}",
+            match self {
+                Color::Black => 'B',
+                Color::Blue => 'U',
+                Color::Orange => 'O',
+                Color::Red => 'R',
+            }
+        )
     }
 }
 
@@ -53,24 +57,29 @@ impl Tile {
     pub fn next(&self) -> Option<Tile> {
         match self {
             Tile::Joker => None,
-            Tile::Number(rank, color) => {
-                Some(match color.next() {
-                    Some(color) => Tile::Number(*rank, color),
-                    None => {
-                        if *rank < 13 {
-                            Tile::Number(rank + 1, Color::min_value())
-                        } else {
-                            Tile::Joker
-                        }
+            Tile::Number(rank, color) => Some(match color.next() {
+                Some(color) => Tile::Number(*rank, color),
+                None => {
+                    if *rank < 13 {
+                        Tile::Number(rank + 1, Color::min_value())
+                    } else {
+                        Tile::Joker
                     }
-                })
-            }
+                }
+            }),
         }
     }
 
     /// Iterate over all the tiles
     pub fn all() -> AllTiles {
         AllTiles {
+            next: Some(Tile::min_value()),
+        }
+    }
+
+    /// Iterate over all the tiles except jokers
+    pub fn all_no_jokers() -> AllTilesNoJokers {
+        AllTilesNoJokers {
             next: Some(Tile::min_value()),
         }
     }
@@ -161,18 +170,35 @@ impl Iterator for AllTiles {
     }
 }
 
+/// Iterator for all the tiles except jokers
+pub struct AllTilesNoJokers {
+    next: Option<Tile>,
+}
+
+impl Iterator for AllTilesNoJokers {
+    type Item = Tile;
+
+    fn next(&mut self) -> Option<Tile> {
+        let res: Tile = self.next?;
+        self.next = match res.next() {
+            None => unreachable!(),
+            Some(Tile::Joker) => None,
+            Some(x) => Some(x),
+        };
+        Some(res)
+    }
+}
+
 /// Represent the tiles available
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Tiles {
-    tiles: u128
+    tiles: u128,
 }
 
 impl Tiles {
     /// An empty set of tiles
     pub fn new() -> Tiles {
-        Tiles {
-            tiles: 0,
-        }
+        Tiles { tiles: 0 }
     }
 
     /// Add another tile of the given type. May fail if we already have 2.
@@ -234,7 +260,9 @@ impl Tiles {
 
     /// How many tiles total do we have?
     pub fn get_total_count(&self) -> u8 {
-        Tile::all().map(|tile| self.get_count(&tile)).fold(0, |x, y| x + y)
+        Tile::all()
+            .map(|tile| self.get_count(&tile))
+            .fold(0, |x, y| x + y)
     }
 }
 
@@ -355,7 +383,10 @@ mod test {
 
     #[test]
     fn test_parse_too_many_jokers() {
-        assert_eq!("J j J".parse::<Tiles>(), Err(TilesError::AlreadyHaveTwo(Tile::Joker)));
+        assert_eq!(
+            "J j J".parse::<Tiles>(),
+            Err(TilesError::AlreadyHaveTwo(Tile::Joker))
+        );
     }
 
     #[test]
