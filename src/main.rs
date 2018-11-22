@@ -35,7 +35,7 @@ fn build() -> Result<(), Box<std::error::Error>> {
     let css = r#"
 td.rank {
     text-align: right;
-    margin-left: 3px;
+    padding-left: 1.5em;
 }
 .tile {
     display: inline-block;
@@ -89,11 +89,11 @@ ul.solutions > li {
     container.append_child(&row);
 
     let board_column = doc.create_element("div")?;
-    board_column.set_attribute("class", "col-lg-6")?;
+    board_column.set_attribute("class", "col-lg-9")?;
     row.append_child(&board_column);
 
     let sol_column = doc.create_element("div")?;
-    sol_column.set_attribute("class", "col-lg-6")?;
+    sol_column.set_attribute("class", "col-lg-3")?;
     row.append_child(&sol_column);
 
     let solutions_h1 = doc.create_element("h1")?;
@@ -211,6 +211,7 @@ ul.solutions > li {
     tbody.append_child(&row);
 
     let td = doc.create_element("td")?;
+    td.set_attribute("class", "rank")?;
     td.append_child(&tile_span(&doc, &Tile::Joker)?);
     row.append_child(&td);
 
