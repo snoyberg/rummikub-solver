@@ -3,7 +3,7 @@
 pub mod tiles;
 pub mod solve;
 
-use stdweb::web::{document, INode, IElement, IEventTarget, Element, Document};
+use stdweb::web::{document, INode, IElement, IEventTarget, Element, Document, window};
 use stdweb::web::event::ClickEvent;
 use stdweb::web::error::InvalidCharacterError;
 
@@ -30,24 +30,6 @@ fn build() -> Result<(), Box<std::error::Error>> {
     link.set_attribute("integrity", "sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO")?;
     link.set_attribute("crossorigin", "anonymous")?;
     head.append_child(&link);
-
-    let script = doc.create_element("script")?;
-    script.set_attribute("src", "https://code.jquery.com/jquery-3.3.1.slim.min.js")?;
-    script.set_attribute("integrity", "sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo")?;
-    script.set_attribute("crossorigin", "anonymous")?;
-    head.append_child(&script);
-
-    let script = doc.create_element("script")?;
-    script.set_attribute("src", "https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js")?;
-    script.set_attribute("integrity", "sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49")?;
-    script.set_attribute("crossorigin", "anonymous")?;
-    head.append_child(&script);
-
-    let script = doc.create_element("script")?;
-    script.set_attribute("src", "https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js")?;
-    script.set_attribute("integrity", "sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy")?;
-    script.set_attribute("crossorigin", "anonymous")?;
-    head.append_child(&script);
 
     let style = doc.create_element("style")?;
     let css = r#"
@@ -105,36 +87,39 @@ fn build() -> Result<(), Box<std::error::Error>> {
 
     let tiles = Rc::new(RefCell::new(Tiles::new()));
 
-    let mut radio_name = 0;
-
     let mut make_tile: impl FnMut(&Document, &Element, Tile) -> Result<(), InvalidCharacterError> = move |doc: &Document, td: &Element, tile: Tile| {
         let button_group = doc.create_element("div")?;
-        button_group.set_attribute("class", "btn-group btn-group-toggle")?;
-        button_group.set_attribute("data-toggle", "buttons")?;
+        button_group.set_attribute("class", "btn-group")?;
         td.append_child(&button_group);
-        let name = format!("radio_{}", radio_name);
-        radio_name += 1;
-        for count in 0..=2 {
-            let label = doc.create_element("label")?;
-            label.set_attribute("class",
-                                if count == 0 {
-                                    "btn btn-outline-primary btn-sm active"
-                                } else {
-                                    "btn btn-outline-primary btn-sm"
-                                })?;
-            button_group.append_child(&label);
 
-            let input = doc.create_element("input")?;
-            input.set_attribute("name", &name)?;
-            input.set_attribute("type", "radio")?;
-            if count == 0 { input.set_attribute("checked", "checked")?; }
+        const ACTIVE: &str = "btn btn-outline-primary btn-sm active";
+        const INACTIVE: &str = "btn btn-outline-primary btn-sm";
 
-            label.append_child(&input);
-            label.append_child(&doc.create_text_node(&count.to_string()));
+        let buttons = Rc::new(
+            [ doc.create_element("button")?
+            , doc.create_element("button")?
+            , doc.create_element("button")?
+            ]);
 
+        for (button, count) in buttons.iter().zip(0..) {
+            button.set_attribute("class", if count == 0 {ACTIVE} else {INACTIVE})?;
+            button.append_child(&doc.create_text_node(&count.to_string()));
+            button_group.append_child(button);
+
+            let buttons = buttons.clone();
             let tiles = tiles.clone();
             let solution = solution.clone();
-            input.add_event_listener(move |_: ClickEvent| {
+            button.add_event_listener(move |_: ClickEvent| {
+                for (button, innercount) in buttons.iter().zip(0..) {
+                    let class = if count == innercount {ACTIVE} else {INACTIVE};
+                    match button.set_attribute("class", class) {
+                        Ok(()) => (),
+                        Err(e) => {
+                            window().alert(&format!("Well that's weird: {}", e));
+                        }
+                    }
+                }
+
                 let mut tiles = tiles.borrow_mut();
                 tiles.set_count(&tile, count);
                 let solutions = solve(*tiles);
