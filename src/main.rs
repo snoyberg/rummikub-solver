@@ -24,6 +24,13 @@ fn build() -> Result<(), Box<std::error::Error>> {
         None => return Err(From::from("Could not find head element")),
         Some(x) => x,
     };
+    let link = doc.create_element("link")?;
+    link.set_attribute("rel", "stylesheet")?;
+    link.set_attribute("href", "https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css")?;
+    link.set_attribute("integrity", "sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO")?;
+    link.set_attribute("crossorigin", "anonymous")?;
+    head.append_child(&link);
+
     let style = doc.create_element("style")?;
     let css = r#"
         table {
@@ -46,6 +53,27 @@ fn build() -> Result<(), Box<std::error::Error>> {
         None => return Err(From::from("Could not find body element")),
         Some(x) => x,
     };
+
+    let container = doc.create_element("div")?;
+    container.set_attribute("class", "container")?;
+    body.append_child(&container);
+
+    let row = doc.create_element("div")?;
+    row.set_attribute("class", "row")?;
+    container.append_child(&row);
+
+    let board_column = doc.create_element("div")?;
+    board_column.set_attribute("class", "col-lg-6")?;
+    row.append_child(&board_column);
+
+    let sol_column = doc.create_element("div")?;
+    sol_column.set_attribute("class", "col-lg-6")?;
+    row.append_child(&sol_column);
+
+    let solution = doc.create_element("pre")?;
+    sol_column.append_child(&solution);
+    let solution = Rc::new(solution);
+
     let table = doc.create_element("table")?;
 
     let tbody = doc.create_element("tbody")?;
@@ -54,9 +82,6 @@ fn build() -> Result<(), Box<std::error::Error>> {
     let tiles = Rc::new(RefCell::new(Tiles::new()));
 
     let mut radio_name = 0;
-
-    let solution = Rc::new(doc.create_element("pre")?);
-    let solution_clone = solution.clone();
 
     let mut make_tile: impl FnMut(&Document, &Element, Tile) -> Result<(), InvalidCharacterError> = move |doc: &Document, td: &Element, tile: Tile| {
         let div = doc.create_element("div")?;
@@ -122,8 +147,7 @@ fn build() -> Result<(), Box<std::error::Error>> {
     row.append_child(&td);
     make_tile(&doc, &td, Tile::Joker)?;
 
-    body.append_child(&table);
-    body.append_child(&*solution_clone);
+    board_column.append_child(&table);
 
     Ok(())
 }
