@@ -149,8 +149,11 @@ ul.solutions > li {
                     button.set_attribute("class", class)?;
                 }
 
-                for node in solution_ul.child_nodes() {
-                    solution_ul.remove_child(&node)?;
+                // We'd like to use the child_nodes() iterator, but it
+                // appears that we invalidate that iterator by
+                // removing things. Instead:
+                while let Some(child) = solution_ul.first_child() {
+                    solution_ul.remove_child(&child)?;
                 }
 
                 let mut tiles = tiles.borrow_mut();
