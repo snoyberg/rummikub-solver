@@ -56,6 +56,7 @@ td.rank {
 }
 .combo {
     margin-right: 1em;
+    display: inline-block;
 }
 ul.solutions {
     list-style: none;
@@ -89,11 +90,11 @@ ul.solutions > li {
     container.append_child(&row);
 
     let board_column = doc.create_element("div")?;
-    board_column.set_attribute("class", "col-lg-9")?;
+    board_column.set_attribute("class", "col-lg-7")?;
     row.append_child(&board_column);
 
     let sol_column = doc.create_element("div")?;
-    sol_column.set_attribute("class", "col-lg-3")?;
+    sol_column.set_attribute("class", "col-lg-5")?;
     row.append_child(&sol_column);
 
     let solutions_h1 = doc.create_element("h1")?;
