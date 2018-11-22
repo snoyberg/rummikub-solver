@@ -157,11 +157,11 @@ ul.solutions > li {
                 tiles.set_count(&tile, count);
                 let solutions = solve(*tiles);
 
-                for sol in solutions.into_iter().rev().filter(|sol| sol.leftover_jokers == 0) {
+                for sol in solutions.into_iter() {
                     let li = doc.create_element("li")?;
                     solution_ul.append_child(&li);
 
-                    for combo in sol.combos {
+                    let on_combo = |combo: &Tiles| {
                         let span = doc.create_element("span")?;
                         span.set_attribute("class", "combo")?;
                         li.append_child(&span);
@@ -172,6 +172,19 @@ ul.solutions > li {
                                 span.append_child(&tile_span(&doc, &tile)?);
                             }
                         }
+
+                        let res: Result<(), InvalidCharacterError> = Ok(());
+                        res
+                    };
+
+                    for combo in sol.combos.iter().rev() {
+                        on_combo(combo)?;
+                    }
+
+                    if sol.leftover_jokers > 0 {
+                        let mut tiles = Tiles::new();
+                        tiles.set_count(&Tile::Joker, sol.leftover_jokers);
+                        on_combo(&tiles)?;
                     }
                 }
 
