@@ -167,8 +167,7 @@ ul.solutions > li {
 
                         for tile in Tile::all() {
                             let count = combo.get_count(&tile);
-                            assert!(count < 2);
-                            if count == 1 {
+                            for _ in 0..count {
                                 span.append_child(&tile_span(&doc, &tile)?);
                             }
                         }
