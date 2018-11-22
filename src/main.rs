@@ -31,8 +31,31 @@ fn build() -> Result<(), Box<std::error::Error>> {
     link.set_attribute("crossorigin", "anonymous")?;
     head.append_child(&link);
 
+    let script = doc.create_element("script")?;
+    script.set_attribute("src", "https://code.jquery.com/jquery-3.3.1.slim.min.js")?;
+    script.set_attribute("integrity", "sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo")?;
+    script.set_attribute("crossorigin", "anonymous")?;
+    head.append_child(&script);
+
+    let script = doc.create_element("script")?;
+    script.set_attribute("src", "https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js")?;
+    script.set_attribute("integrity", "sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49")?;
+    script.set_attribute("crossorigin", "anonymous")?;
+    head.append_child(&script);
+
+    let script = doc.create_element("script")?;
+    script.set_attribute("src", "https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js")?;
+    script.set_attribute("integrity", "sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy")?;
+    script.set_attribute("crossorigin", "anonymous")?;
+    head.append_child(&script);
+
     let style = doc.create_element("style")?;
     let css = r#"
+        td.rank {
+            text-align: right;
+            margin-left: 3px;
+        }
+/*
         table {
             border-collapse: collapse;
         }
@@ -45,6 +68,7 @@ fn build() -> Result<(), Box<std::error::Error>> {
             font-size: 2em;
             font-weight: bold;
         }
+*/
 "#;
     style.append_child(&doc.create_text_node(css));
     head.append_child(&style);
@@ -84,25 +108,29 @@ fn build() -> Result<(), Box<std::error::Error>> {
     let mut radio_name = 0;
 
     let mut make_tile: impl FnMut(&Document, &Element, Tile) -> Result<(), InvalidCharacterError> = move |doc: &Document, td: &Element, tile: Tile| {
-        let div = doc.create_element("div")?;
-        div.set_attribute("class", "rank")?;
-        div.append_child(&doc.create_text_node(&match tile {
-            Tile::Joker => String::from("Joker"),
-            Tile::Number(rank, _) => rank.to_string(),
-        }));
-        td.append_child(&div);
-
-        // FIXME use push buttons instead
+        let button_group = doc.create_element("div")?;
+        button_group.set_attribute("class", "btn-group btn-group-toggle")?;
+        button_group.set_attribute("data-toggle", "buttons")?;
+        td.append_child(&button_group);
         let name = format!("radio_{}", radio_name);
         radio_name += 1;
         for count in 0..=2 {
+            let label = doc.create_element("label")?;
+            label.set_attribute("class",
+                                if count == 0 {
+                                    "btn btn-outline-primary btn-sm active"
+                                } else {
+                                    "btn btn-outline-primary btn-sm"
+                                })?;
+            button_group.append_child(&label);
+
             let input = doc.create_element("input")?;
             input.set_attribute("name", &name)?;
             input.set_attribute("type", "radio")?;
             if count == 0 { input.set_attribute("checked", "checked")?; }
 
-            td.append_child(&input);
-            td.append_child(&doc.create_text_node(&count.to_string()));
+            label.append_child(&input);
+            label.append_child(&doc.create_text_node(&count.to_string()));
 
             let tiles = tiles.clone();
             let solution = solution.clone();
@@ -129,12 +157,17 @@ fn build() -> Result<(), Box<std::error::Error>> {
 
         for color in Color::all() {
             let td = doc.create_element("td")?;
+            td.set_attribute("class", "rank")?;
             td.set_attribute("style", &format!("color: {}", match color {
                 Color::Black => "black",
                 Color::Blue => "blue",
                 Color::Orange => "orange",
                 Color::Red => "red",
             }))?;
+            td.append_child(&doc.create_text_node(&rank.to_string()));
+            row.append_child(&td);
+
+            let td = doc.create_element("td")?;
             make_tile(&doc, &td, Tile::Number(rank, color))?;
             row.append_child(&td);
 
@@ -143,7 +176,13 @@ fn build() -> Result<(), Box<std::error::Error>> {
 
     let row = doc.create_element("tr")?;
     tbody.append_child(&row);
+
     let td = doc.create_element("td")?;
+    td.append_child(&doc.create_text_node("Joker"));
+    row.append_child(&td);
+
+    let td = doc.create_element("td")?;
+    td.set_attribute("colspan", "7")?;
     row.append_child(&td);
     make_tile(&doc, &td, Tile::Joker)?;
 
