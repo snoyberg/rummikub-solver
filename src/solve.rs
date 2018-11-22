@@ -115,6 +115,14 @@ fn solve_loop<'a>(results: &mut Vec<Solution>, tiles: Tiles, mut next: Tile, res
                 combo.set_count(&Tile::Number(rank, color), 1);
                 if !test_combo(combo) { break }
             }
+        } else if rank == 12 {
+            // special case: if we have a 12, 13, and joker, we can
+            // make a run, but the above code will miss it
+            let mut combo = Tiles::new();
+            combo.set_count(&next, 1);
+            combo.set_count(&Tile::Number(11, color), 1);
+            combo.set_count(&Tile::Number(13, color), 1);
+            test_combo(combo);
         }
 
         // triples/quads
@@ -234,5 +242,10 @@ mod test {
             tiles.add_tile(&tile).unwrap();
             assert_eq!(count_solutions(tiles), 0);
         }
+    }
+
+    #[test]
+    fn test_joker_and_12_run() {
+        assert_eq!(count_solutions("12R 13R J".parse().unwrap()), 1);
     }
 }

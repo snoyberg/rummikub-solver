@@ -9,5 +9,3 @@ Usage:
 1. Install `cargo-web`: https://github.com/koute/cargo-web
 2. Run `cargo web start`
 3. Open http://127.0.0.1:8080
-
-FIXME: add a case for `12R 13R J`
