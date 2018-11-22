@@ -38,6 +38,26 @@ impl Color {
             Color::Red => None,
         }
     }
+
+    /// Iterate all of the colors
+    pub fn all() -> AllColors {
+        AllColors { next: Some(Color::min_value()) }
+    }
+}
+
+/// Iterate all of the colors
+pub struct AllColors {
+    next: Option<Color>,
+}
+
+impl Iterator for AllColors {
+    type Item = Color;
+
+    fn next(&mut self) -> Option<Color> {
+        let res = self.next?;
+        self.next = res.next();
+        Some(res)
+    }
 }
 
 /// Represent a single tile
